@@ -113,6 +113,7 @@ void off() {
 // short mark, dot or "dit" (·) — "dot duration" is one time unit long
 void dot() {
   on();
+  Serial.print('.');
   delay(ONCE);
 }
 
@@ -120,11 +121,12 @@ void dot() {
 // longer mark, dash or "dah" (–) — three time units long
 void dash() {
   on();
+  Serial.print('-');
   delay(ONCE*3);
 }
 
 
-// inter-element gap between the dots and dashes within a character — one time unit long
+// short gap between any combination of dots and dashes — one time unit long
 void nextElement() {
   off();
   delay(ONCE);
@@ -166,11 +168,10 @@ void loop() {
   // listen for serial commands
   while( Serial.available() > 0 ) {
     char c = Serial.read();
-    // if we hit a semi-colon, assume end of instruction.
     if( c == '\n' && soFar > 0 ) {
       processMessage();
       ready();
-    } else {
+    } else if( soFar < MAX_BUF ) {
       buffer[ soFar ] = c;
       soFar++;
     }
@@ -184,7 +185,7 @@ void processMessage() {
   // is this the first letter of word?
   first = 1;
   // go through the characters sent by the PC user one by one
-  for( i=0; i<MAX_BUF && buffer[i]!=0; ++i ) {
+  for( i=0; i<strlen(buffer); ++i ) {
     // find the character in the list of *letters
     char c = buffer[i];
     // print it for the PC user
@@ -203,12 +204,13 @@ void processMessage() {
       first = false;
     }
   }
+
   Serial.print("\n");  // new line
 }
 
 
+// find j such that codes[j] is the sequence for character c
 void morsifyLetter(char c) {
-  
   int j;
   
   for( j=0; j<strlen(letters); ++j ) {
@@ -224,17 +226,19 @@ void morsifyLetter(char c) {
 }
 
 
+// blink sequence codes[j]
 void blinkCodeSequence(int j) {
   const char *c;
   int first = 1;
 
   for( c = codes[j]; *c != 0; ++c ) {
-    if( *c == '0' ) dash();
-    if( *c == '1' ) dot();
-
     // put a gap between dots and dashes.
     if( first == 0 ) nextElement();
     else first = 0;
+
+    // pulse the light
+    if( *c == '0' ) dash();
+    if( *c == '1' ) dot();
   }
 }
 
