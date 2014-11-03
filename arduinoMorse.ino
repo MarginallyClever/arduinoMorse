@@ -136,13 +136,15 @@ void nextElement() {
 // short gap (between letters) — three time units long
 void nextLetter() {
   off();
-  delay(ONCE*4);
+  //Serial.println("  ***");
+  delay(ONCE*3);
 }
 
 
 // medium gap (between words) — seven time units long
 void nextWord() {
   off();
+  //Serial.println("  *******");
   delay(ONCE*7);
 }
 
@@ -160,6 +162,7 @@ void setup() {
   
   // set up to talk with the PC.
   Serial.begin(BAUD);
+  Serial.println("** Start **");
   ready();
 }
 
@@ -169,7 +172,8 @@ void loop() {
   while( Serial.available() > 0 ) {
     char c = Serial.read();
     if( c == '\n' && soFar > 0 ) {
-      processMessage();
+      buffer[soFar]=0;
+      processMessage(buffer);
       ready();
     } else if( soFar < MAX_BUF ) {
       buffer[ soFar ] = c;
@@ -179,33 +183,34 @@ void loop() {
 }
 
 
-void processMessage() {
+void processMessage(char *message) {
   int i, first;
 
   // is this the first letter of word?
   first = 1;
   // go through the characters sent by the PC user one by one
-  for( i=0; i<strlen(buffer); ++i ) {
+  for( i=0; i<strlen(message); ++i ) {
     // find the character in the list of *letters
-    char c = buffer[i];
-    // print it for the PC user
-    Serial.print(c);
-    Serial.print(' ');
+    char c = message[i];
 
     if( c == ' ' ) {
+      Serial.print("  ");
       nextWord();
       first = 1;
-    } else {
-      if( first != 1 ) {
-        nextLetter();
-      }
-      // try to turn it into morse.
-      morsifyLetter(c);
-      first = false;
+      Serial.print("\n");  // new line
+      continue;
     }
+    if( first != 1 ) {
+      nextLetter();
+    }
+      
+    Serial.print(c);
+    Serial.print(' ');
+    // try to turn it into morse.
+    morsifyLetter(c);
+    first = 0;
+    Serial.print("\n");  // new line
   }
-
-  Serial.print("\n");  // new line
 }
 
 
@@ -228,17 +233,15 @@ void morsifyLetter(char c) {
 
 // blink sequence codes[j]
 void blinkCodeSequence(int j) {
-  const char *c;
-  int first = 1;
+  int i;
 
-  for( c = codes[j]; *c != 0; ++c ) {
+  for( i=0; i < strlen(codes[j]); ++i ) {
     // put a gap between dots and dashes.
-    if( first == 0 ) nextElement();
-    else first = 0;
+    if( i > 0 ) nextElement();
 
     // pulse the light
-    if( *c == '0' ) dash();
-    if( *c == '1' ) dot();
+    if( codes[j][i] == '0' ) dash();
+    if( codes[j][i] == '1' ) dot();
   }
 }
 
