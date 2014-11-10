@@ -17,7 +17,7 @@
 //------------------------------------------------------------------------------
 // constants
 //------------------------------------------------------------------------------
-#define ONCE     (200)
+#define ONCE     (100)
 #define LED      (13)
 #define MAX_BUF  (64)
 #define BAUD     (9600)
@@ -208,6 +208,7 @@ void processMessage(char *message) {
     Serial.print(' ');
     // try to turn it into morse.
     morsifyLetter(c);
+    off();
     first = 0;
     Serial.print("\n");  // new line
   }
